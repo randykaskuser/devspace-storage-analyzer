@@ -15,8 +15,10 @@ if __name__ == "__main__":
         '--windowed',
         '--onefile' if not is_mac else '--onedir', # macOS usually uses onedir for .app bundles
         '--clean',
-        '--icon=assets/icon.ico' if not is_mac else '--icon=assets/icon.icns', # .icns for mac if they add one later, defaults otherwise
     ]
+    
+    if not is_mac:
+        build_args.append('--icon=assets/icon.ico')
     
     # Platform-agnostic path separator for PyInstaller data
     sep = ':' if is_mac else ';'
