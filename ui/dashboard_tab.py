@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                QFrame, QProgressBar, QPushButton, QScrollArea, QGridLayout)
 from PySide6.QtCore import Qt
 from core.background_aggregator import BackgroundAggregatorThread
-from core.system_info import format_size, get_disk_usage
+from core.system_info import format_size, get_disk_usage, get_system_drive_path
 from core.db import db
 from ui.global_caches_tab import GlobalCacheDeleteThread
 
@@ -31,7 +31,7 @@ class DashboardTab(QWidget):
         self.lbl_sub.setStyleSheet("font-size: 16px; color: #a9b7c6; margin-bottom: 20px;")
         
         # SSD Health Overview
-        self.lbl_ssd = QLabel("Drive C: Scanning...")
+        self.lbl_ssd = QLabel("System Drive: Scanning...")
         self.lbl_ssd.setStyleSheet("font-size: 14px; font-weight: bold; color: #a9b7c6;")
         
         v_top.addWidget(self.lbl_total)
@@ -180,11 +180,12 @@ class DashboardTab(QWidget):
         self.grid_layout.addWidget(self.create_stat_card("Developer Storage", format_size(dev_total)), 0, 3)
         
         # Update SSD Health
-        total_d, used_d, free_d = get_disk_usage("C:\\")
+        drive_path = get_system_drive_path()
+        total_d, used_d, free_d = get_disk_usage(drive_path)
         if total_d > 0:
             free_pct = (free_d / total_d) * 100
             used_pct = 100 - free_pct
-            self.lbl_ssd.setText(f"Drive C: {format_size(total_d)} SSD  |  Used: {used_pct:.1f}%  |  Free: {free_pct:.1f}%")
+            self.lbl_ssd.setText(f"System Drive: {format_size(total_d)} SSD  |  Used: {used_pct:.1f}%  |  Free: {free_pct:.1f}%")
             if free_pct < 15:
                 self.lbl_ssd.setStyleSheet("font-size: 14px; font-weight: bold; color: #e53935;")
             else:
