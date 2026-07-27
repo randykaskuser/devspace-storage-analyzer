@@ -138,7 +138,16 @@ class DashboardTab(QWidget):
         total_rec = stats.get("total_recoverable", 0)
         
         self.lbl_total.setText(f"{format_size(total_rec)}")
-        self.btn_clean_rec.setEnabled(total_rec > 0)
+        
+        safe_caches = [c for c in stats.get("global_caches", []) if "Safe" in c.get("safety", "")]
+        safe_size = sum(c["size_bytes"] for c in safe_caches)
+        
+        if safe_size > 0:
+            self.btn_clean_rec.setText(f"Clean {format_size(safe_size)} (Safe)")
+            self.btn_clean_rec.setEnabled(True)
+        else:
+            self.btn_clean_rec.setText("No Safe Caches to Clean")
+            self.btn_clean_rec.setEnabled(False)
         
         docker_size = sum(d.get("size_bytes", 0) for d in stats.get("wsl_distros", []))
         node_size, py_size, rust_size, other_size = 0, 0, 0, 0
@@ -226,11 +235,9 @@ class DashboardTab(QWidget):
             
         # Advisor Logic
         added_advice = False
-        safe_caches = [c for c in stats.get("global_caches", []) if "Safe" in c.get("safety", "")]
-        safe_size = sum(c["size_bytes"] for c in safe_caches)
         
         if safe_caches:
-            self.add_advisor_card(f"You have {len(safe_caches)} global caches that are 100% safe to delete. Consider clicking 'Clean Recommended' to instantly recover {format_size(safe_size)}.")
+            self.add_advisor_card(f"You have {len(safe_caches)} global caches that are 100% safe to delete. Consider clicking the Clean button to instantly recover {format_size(safe_size)}.")
             added_advice = True
             
         if total_d > 0 and (free_d / total_d) < 0.15:
@@ -273,7 +280,7 @@ class DashboardTab(QWidget):
         
     def on_clean_finished(self, freed):
         # Refresh dashboard
-        self.btn_clean_rec.setText("Clean Recommended")
+        self.btn_clean_rec.setText("Scanning...")
         self.aggregator = BackgroundAggregatorThread()
         self.aggregator.finished.connect(self.on_stats_loaded)
         self.aggregator.start()
