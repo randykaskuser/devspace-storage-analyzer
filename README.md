@@ -42,6 +42,8 @@ Docker Desktop on Windows uses a dynamic virtual disk (`ext4.vhdx`) that grows o
 - **How it works**: Gracefully shuts down the WSL engine (`wsl --shutdown`) and executes a low-level Windows `diskpart` script to mount, compact, and detach the `ext4.vhdx`, immediately returning gigabytes of space back to the host OS.
 
 ### 5. Windows Storage
+![Windows Storage](assets/windows.png)
+
 *A dedicated scanner for developer-adjacent Windows OS caches that frequently bloat your system.*
 - **How to use**: Navigate to the tab to analyze your OS-level caches.
 - **How it works**: Intelligently identifies and cleans caches that developers often generate heavily: Windows Update Cache, Delivery Optimization, `User Temp`, `Windows Temp`, DirectX/NVIDIA/AMD Shader Caches, and the Recycle Bin. It strictly avoids generic "PC Optimizer" territory (no registry cleaners).
