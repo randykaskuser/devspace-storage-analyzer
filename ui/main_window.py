@@ -10,6 +10,7 @@ from ui.global_caches_tab import GlobalCachesTab
 from ui.containers_tab import ContainersTab
 from ui.windows_storage_tab import WindowsStorageTab
 from ui.history_tab import HistoryTab
+from core.system_info import is_mac
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -42,11 +43,16 @@ class MainWindow(QMainWindow):
         self._add_sidebar_header("DEVELOPMENT")
         self._add_sidebar_item(" 🟦 Workspaces", 1) # 2
         self._add_sidebar_item(" 🟧 Development Caches", 2) # 3
-        self._add_sidebar_item(" 🟪 Containers & WSL", 3) # 4
+        
+        if not is_mac():
+            self._add_sidebar_item(" 🟪 Containers & WSL", 3) # 4
         
         # 5
         self._add_sidebar_header("SYSTEM")
-        self._add_sidebar_item(" 🪟 Windows Storage", 4) # 6
+        
+        if not is_mac():
+            self._add_sidebar_item(" 🪟 Windows Storage", 4) # 6
+            
         self._add_sidebar_item(" 📖 Cleanup History", 5) # 7
         
         self.sidebar.currentRowChanged.connect(self.change_page)
@@ -61,12 +67,12 @@ class MainWindow(QMainWindow):
         self.windows_storage_tab = WindowsStorageTab()
         self.history_tab = HistoryTab()
         
-        self.content_stack.addWidget(self.dashboard_tab)
-        self.content_stack.addWidget(self.repo_tab)
-        self.content_stack.addWidget(self.global_caches_tab)
-        self.content_stack.addWidget(self.containers_tab)
-        self.content_stack.addWidget(self.windows_storage_tab)
-        self.content_stack.addWidget(self.history_tab)
+        self.content_stack.addWidget(self.dashboard_tab) # 0
+        self.content_stack.addWidget(self.repo_tab) # 1
+        self.content_stack.addWidget(self.global_caches_tab) # 2
+        self.content_stack.addWidget(self.containers_tab) # 3
+        self.content_stack.addWidget(self.windows_storage_tab) # 4
+        self.content_stack.addWidget(self.history_tab) # 5
         
         main_layout.addWidget(self.sidebar)
         main_layout.addWidget(self.content_stack)

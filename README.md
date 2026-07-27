@@ -2,7 +2,12 @@
 
 **DevSpace Analytics is essentially CCleaner, but built exclusively for Software Developers.** 
 
-It is a commercial-grade, standalone Windows desktop application designed to help you understand what is consuming your disk space and safely reclaim it with deep ecosystem context. If you are struggling with low disk space on your development machine, DevSpace is the ultimate developer disk space optimizer.
+It is a commercial-grade, standalone desktop application designed to help you understand what is consuming your disk space and safely reclaim it with deep ecosystem context. If you are struggling with low disk space on your development machine, DevSpace is the ultimate developer disk space optimizer.
+
+## 📥 Download
+
+- **[Download for Windows (.exe)](https://github.com/randykaskuser/devspace-storage-analyzer/raw/master/dist/DevSpace.exe)**
+- **[Download for macOS (.dmg)](https://github.com/randykaskuser/devspace-storage-analyzer/raw/master/dist/DevSpace.dmg)** *(Note: macOS support is newly added and currently untested).*
 
 Gone are the days of generic Windows cache cleaners or PC optimizers. DevSpace focuses entirely on the real developer pain points: `node_modules`, bloated global caches (`.npm`, `pip`, `cargo`), and unshrinkable WSL2/Docker virtual disks.
 

@@ -6,40 +6,58 @@ from core.trash import hard_delete_directory_contents
 
 # Define known global cache paths and their safety ratings
 # Safety Rating: Safe, Moderate, Careful
-GLOBAL_CACHES = {
-    "NPM Cache": { "path": ".npm", "safety": "🟢 Safe" },
-    "NPM Cache (Windows)": { "path": r"AppData\Local\npm-cache", "safety": "🟢 Safe" },
-    "Yarn Cache": { "path": r"AppData\Local\Yarn\Cache", "safety": "🟢 Safe" },
-    "PNPM Store": { "path": r"AppData\Local\pnpm\store", "safety": "🟢 Safe" },
-    "PNPM Cache": { "path": r"AppData\Local\pnpm-cache", "safety": "🟢 Safe" },
-    "Pip Cache": { "path": r"AppData\Local\pip\cache", "safety": "🟢 Safe" },
-    "UV Cache": { "path": r"AppData\Local\uv\cache", "safety": "🟢 Safe" },
-    "Cargo Registry": { "path": r".cargo\registry\cache", "safety": "🟠 Rebuild Required" },
-    "Rustup Downloads": { "path": r".rustup\downloads", "safety": "🟢 Safe" },
-    "Maven Repository": { "path": ".m2", "safety": "🟡 Moderate" },
-    "Gradle Caches": { "path": r".gradle\caches", "safety": "🟡 Moderate" },
-    "Flutter Pub Cache": { "path": r"AppData\Local\Pub\Cache", "safety": "🟢 Safe" },
-    "Nuget Packages": { "path": r".nuget\packages", "safety": "🟡 Moderate" },
-    "Go Build Cache": { "path": r"AppData\Local\go-build", "safety": "🟠 Rebuild Required" },
-    "Electron Cache": { "path": r"AppData\Local\electron\Cache", "safety": "🟡 Review (If Unused)" },
-    "Playwright Browsers": { "path": r"AppData\Local\ms-playwright", "safety": "🟡 Review (If Unused)" },
-    "Android Studio NDKs (Old)": { "path": r"AppData\Local\Android\Sdk\ndk", "safety": "🟡 Moderate" }
-}
+from core.system_info import get_home_dir, get_local_appdata_dir, is_mac
+
+def get_global_caches() -> dict:
+    home = get_home_dir()
+    local_appdata = get_local_appdata_dir()
+    
+    caches = {
+        "NPM Cache": { "path": os.path.join(home, ".npm"), "safety": "🟢 Safe" },
+        "Rustup Downloads": { "path": os.path.join(home, ".rustup", "downloads"), "safety": "🟢 Safe" },
+        "Maven Repository": { "path": os.path.join(home, ".m2"), "safety": "🟡 Moderate" },
+        "Gradle Caches": { "path": os.path.join(home, ".gradle", "caches"), "safety": "🟡 Moderate" },
+        "Nuget Packages": { "path": os.path.join(home, ".nuget", "packages"), "safety": "🟡 Moderate" },
+    }
+
+    if is_mac():
+        caches.update({
+            "Yarn Cache": { "path": os.path.join(local_appdata, "Yarn"), "safety": "🟢 Safe" },
+            "PNPM Store": { "path": os.path.join(local_appdata, "pnpm"), "safety": "🟢 Safe" }, # Varies but often local app data or home
+            "Pip Cache": { "path": os.path.join(local_appdata, "pip"), "safety": "🟢 Safe" },
+            "UV Cache": { "path": os.path.join(local_appdata, "uv"), "safety": "🟢 Safe" },
+            "Cargo Registry": { "path": os.path.join(home, ".cargo", "registry", "cache"), "safety": "🟠 Rebuild Required" },
+            "Electron Cache": { "path": os.path.join(local_appdata, "Electron"), "safety": "🟡 Review (If Unused)" },
+            "Playwright Browsers": { "path": os.path.join(local_appdata, "ms-playwright"), "safety": "🟡 Review (If Unused)" },
+        })
+    else:
+        caches.update({
+            "NPM Cache (Windows)": { "path": os.path.join(local_appdata, "npm-cache"), "safety": "🟢 Safe" },
+            "Yarn Cache": { "path": os.path.join(local_appdata, "Yarn", "Cache"), "safety": "🟢 Safe" },
+            "PNPM Store": { "path": os.path.join(local_appdata, "pnpm", "store"), "safety": "🟢 Safe" },
+            "PNPM Cache": { "path": os.path.join(local_appdata, "pnpm-cache"), "safety": "🟢 Safe" },
+            "Pip Cache": { "path": os.path.join(local_appdata, "pip", "cache"), "safety": "🟢 Safe" },
+            "UV Cache": { "path": os.path.join(local_appdata, "uv", "cache"), "safety": "🟢 Safe" },
+            "Cargo Registry": { "path": os.path.join(home, ".cargo", "registry", "cache"), "safety": "🟠 Rebuild Required" },
+            "Flutter Pub Cache": { "path": os.path.join(local_appdata, "Pub", "Cache"), "safety": "🟢 Safe" },
+            "Go Build Cache": { "path": os.path.join(local_appdata, "go-build"), "safety": "🟠 Rebuild Required" },
+            "Electron Cache": { "path": os.path.join(local_appdata, "electron", "Cache"), "safety": "🟡 Review (If Unused)" },
+            "Playwright Browsers": { "path": os.path.join(local_appdata, "ms-playwright"), "safety": "🟡 Review (If Unused)" },
+            "Android Studio NDKs (Old)": { "path": os.path.join(local_appdata, "Android", "Sdk", "ndk"), "safety": "🟡 Moderate" }
+        })
+    
+    return caches
 
 def scan_global_caches() -> list[dict]:
     """
     Scans for known global developer caches in the user profile.
     """
-    user_profile = os.environ.get("USERPROFILE", "")
     found_caches = []
-    
-    if not user_profile:
-        return []
         
-    for name, info in GLOBAL_CACHES.items():
-        rel_path = info["path"]
+    caches = get_global_caches()
+    for name, info in caches.items():
+        full_path = info["path"]
         safety = info["safety"]
-        full_path = os.path.join(user_profile, rel_path)
         if os.path.exists(full_path) and os.path.isdir(full_path):
             size = get_dir_size(full_path)
             if size > 0:
