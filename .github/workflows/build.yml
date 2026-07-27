@@ -2,7 +2,8 @@ name: Build Release
 
 on:
   push:
-    branches: [ "master", "feature/macos-support" ]
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -67,8 +68,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "release-files/*"
-          tag: "latest"
-          name: "Latest Release"
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           generateReleaseNotes: true
-          allowUpdates: true
           makeLatest: true
