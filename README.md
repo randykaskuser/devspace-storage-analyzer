@@ -1,4 +1,22 @@
-# DevSpace - Developer Storage Analyzer & Cleaner 🚀
+<p align="center">
+  <img src="assets/logo.png" width="180" alt="DevSpace Logo">
+</p>
+
+<h1 align="center">DevSpace</h1>
+
+<p align="center">
+  <a href="https://github.com/randykaskuser/devspace-storage-analyzer/releases/latest">
+    <img src="https://img.shields.io/github/v/release/randykaskuser/devspace-storage-analyzer?label=latest%20release&style=flat-square&color=success" alt="Latest Release">
+  </a>
+  <a href="https://github.com/randykaskuser/devspace-storage-analyzer">
+    <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-blue?style=flat-square" alt="Platform">
+  </a>
+  <a href="https://github.com/randykaskuser/devspace-storage-analyzer/blob/master/LICENSE">
+    <img src="https://img.shields.io/github/license/randykaskuser/devspace-storage-analyzer?style=flat-square&color=blueviolet" alt="License">
+  </a>
+</p>
+
+<hr>
 
 **DevSpace Analytics is essentially CCleaner, but built exclusively for Software Developers.** 
 
