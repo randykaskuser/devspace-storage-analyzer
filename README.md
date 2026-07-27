@@ -6,8 +6,8 @@ It is a commercial-grade, standalone desktop application designed to help you un
 
 ## 📥 Download
 
-- **[Download for Windows (.exe)](https://github.com/randykaskuser/devspace-storage-analyzer/raw/master/dist/DevSpace.exe)**
-- **[Download for macOS (.dmg)](https://github.com/randykaskuser/devspace-storage-analyzer/raw/master/dist/DevSpace.dmg)** *(Note: macOS support is newly added and currently untested).*
+- **[Download for Windows (.exe)](https://github.com/randykaskuser/devspace-storage-analyzer/releases/latest/download/DevSpace.exe)**
+- **[Download for macOS (.dmg)](https://github.com/randykaskuser/devspace-storage-analyzer/releases/latest/download/DevSpace.dmg)** *(Note: macOS support is newly added and currently untested).*
 
 Gone are the days of generic Windows cache cleaners or PC optimizers. DevSpace focuses entirely on the real developer pain points: `node_modules`, bloated global caches (`.npm`, `pip`, `cargo`), and unshrinkable WSL2/Docker virtual disks.
 
