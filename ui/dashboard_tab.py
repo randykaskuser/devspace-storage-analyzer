@@ -1,13 +1,15 @@
 import os
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                                QFrame, QProgressBar, QPushButton, QScrollArea, QGridLayout)
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from core.background_aggregator import BackgroundAggregatorThread
 from core.system_info import format_size, get_disk_usage, get_system_drive_path
 from core.db import db
 from ui.global_caches_tab import GlobalCacheDeleteThread
 
 class DashboardTab(QWidget):
+    request_navigate = Signal(int)
+    
     def __init__(self):
         super().__init__()
         self.stats = {}
@@ -44,9 +46,19 @@ class DashboardTab(QWidget):
         self.btn_clean_rec.clicked.connect(self.clean_recommended)
         self.btn_clean_rec.setEnabled(False)
         
+        self.btn_review = QPushButton("Review Remaining Caches ➔")
+        self.btn_review.setStyleSheet("background-color: transparent; color: #4a88c7; font-size: 14px; font-weight: bold; padding: 10px; border: 2px solid #4a88c7; border-radius: 8px;")
+        self.btn_review.setCursor(Qt.PointingHandCursor)
+        self.btn_review.clicked.connect(lambda: self.request_navigate.emit(2))
+        self.btn_review.hide()
+        
+        v_btn = QVBoxLayout()
+        v_btn.addWidget(self.btn_clean_rec)
+        v_btn.addWidget(self.btn_review)
+        
         top_layout.addLayout(v_top)
         top_layout.addStretch()
-        top_layout.addWidget(self.btn_clean_rec)
+        top_layout.addLayout(v_btn)
         
         # --- Stat Cards Grid ---
         self.grid_layout = QGridLayout()
@@ -145,9 +157,14 @@ class DashboardTab(QWidget):
         if safe_size > 0:
             self.btn_clean_rec.setText(f"Clean {format_size(safe_size)} (Safe)")
             self.btn_clean_rec.setEnabled(True)
+            self.btn_review.hide()
         else:
             self.btn_clean_rec.setText("No Safe Caches to Clean")
             self.btn_clean_rec.setEnabled(False)
+            if total_rec > 0:
+                self.btn_review.show()
+            else:
+                self.btn_review.hide()
         
         docker_size = sum(d.get("size_bytes", 0) for d in stats.get("wsl_distros", []))
         node_size, py_size, rust_size, other_size = 0, 0, 0, 0

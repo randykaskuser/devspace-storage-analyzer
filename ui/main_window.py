@@ -61,6 +61,7 @@ class MainWindow(QMainWindow):
         self.content_stack = QStackedWidget()
         
         self.dashboard_tab = DashboardTab()
+        self.dashboard_tab.request_navigate.connect(self.navigate_to_stack)
         self.repo_tab = RepoTab()
         self.global_caches_tab = GlobalCachesTab()
         self.containers_tab = ContainersTab()
@@ -98,10 +99,16 @@ class MainWindow(QMainWindow):
         item.setFont(font)
         item.setForeground(Qt.gray)
         self.sidebar.addItem(item)
+        
+    def navigate_to_stack(self, stack_index):
+        for row, idx in self.page_mapping.items():
+            if idx == stack_index:
+                self.sidebar.setCurrentRow(row)
+                break
 
-    def change_page(self, index):
-        if index in self.page_mapping:
-            stack_idx = self.page_mapping[index]
+    def change_page(self, current_row):
+        stack_idx = self.page_mapping.get(current_row)
+        if stack_idx is not None:
             self.content_stack.setCurrentIndex(stack_idx)
             if stack_idx == 5:
                 self.history_tab.load_data()
