@@ -11,6 +11,7 @@ __pycache__/
 
 # PyInstaller builds
 build/
+dist/
 *.spec
 
 # C extensions

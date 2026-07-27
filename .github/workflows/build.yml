@@ -69,6 +69,6 @@ jobs:
           artifacts: "release-files/*"
           tag: "latest"
           name: "Latest Release"
-          body: "Automated builds from the latest commit."
+          generateReleaseNotes: true
           allowUpdates: true
           makeLatest: true
