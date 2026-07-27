@@ -1,8 +1,10 @@
-# DevSpace Analytics (v2.0) 🚀
+# DevSpace - Developer Storage Analyzer & Cleaner 🚀
 
-DevSpace Analytics is a commercial-grade, standalone Windows desktop application built with Python and PySide6. It is meticulously designed exclusively for Software Engineers to help them understand what is consuming disk space and safely reclaim it with deep ecosystem context.
+**DevSpace Analytics is essentially CCleaner, but built exclusively for Software Developers.** 
 
-Gone are the days of generic Windows cache cleaners. DevSpace focuses entirely on the real developer pain points: `node_modules`, bloated global caches (`.npm`, `pip`, `cargo`), and unshrinkable WSL2/Docker virtual disks.
+It is a commercial-grade, standalone Windows desktop application designed to help you understand what is consuming your disk space and safely reclaim it with deep ecosystem context. If you are struggling with low disk space on your development machine, DevSpace is the ultimate developer disk space optimizer.
+
+Gone are the days of generic Windows cache cleaners or PC optimizers. DevSpace focuses entirely on the real developer pain points: `node_modules`, bloated global caches (`.npm`, `pip`, `cargo`), and unshrinkable WSL2/Docker virtual disks.
 
 ## 🌟 Features & Modules
 
