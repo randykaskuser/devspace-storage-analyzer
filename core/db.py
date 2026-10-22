@@ -2,9 +2,14 @@ import os
 import json
 from datetime import datetime
 
+from core.system_info import get_home_dir
+
 class DevSpaceDB:
     def __init__(self):
-        self.profile_dir = os.path.join(os.environ.get("USERPROFILE", ""), ".devspace")
+        # USERPROFILE is Windows-only; on macOS/Linux it is unset, which used
+        # to make this a CWD-relative ".devspace" folder. get_home_dir() is
+        # platform-correct (Path.home()) on every OS.
+        self.profile_dir = os.path.join(get_home_dir(), ".devspace")
         self.stats_file = os.path.join(self.profile_dir, "stats.json")
         self.history_file = os.path.join(self.profile_dir, "history.json")
         self._ensure_dirs()
