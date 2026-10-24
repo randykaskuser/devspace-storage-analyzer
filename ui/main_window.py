@@ -10,6 +10,7 @@ from ui.global_caches_tab import GlobalCachesTab
 from ui.containers_tab import ContainersTab
 from ui.windows_storage_tab import WindowsStorageTab
 from ui.history_tab import HistoryTab
+from ui.duplicates_tab import DuplicatesTab
 from core.system_info import is_mac
 
 class MainWindow(QMainWindow):
@@ -43,6 +44,7 @@ class MainWindow(QMainWindow):
         self._add_sidebar_header("DEVELOPMENT")
         self._add_sidebar_item(" 🟦 Workspaces", 1) # 2
         self._add_sidebar_item(" 🟧 Development Caches", 2) # 3
+        self._add_sidebar_item(" 🗂️ Duplicates", 6)
         
         if not is_mac():
             self._add_sidebar_item(" 🟪 Containers & WSL", 3) # 4
@@ -67,6 +69,7 @@ class MainWindow(QMainWindow):
         self.containers_tab = ContainersTab()
         self.windows_storage_tab = WindowsStorageTab()
         self.history_tab = HistoryTab()
+        self.duplicates_tab = DuplicatesTab()
         
         self.content_stack.addWidget(self.dashboard_tab) # 0
         self.content_stack.addWidget(self.repo_tab) # 1
@@ -74,6 +77,7 @@ class MainWindow(QMainWindow):
         self.content_stack.addWidget(self.containers_tab) # 3
         self.content_stack.addWidget(self.windows_storage_tab) # 4
         self.content_stack.addWidget(self.history_tab) # 5
+        self.content_stack.addWidget(self.duplicates_tab) # 6
         
         main_layout.addWidget(self.sidebar)
         main_layout.addWidget(self.content_stack)
