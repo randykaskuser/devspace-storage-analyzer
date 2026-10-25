@@ -1,8 +1,10 @@
 import os
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                               QFrame, QProgressBar, QPushButton, QScrollArea, QGridLayout)
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+                               QFrame, QProgressBar, QPushButton, QScrollArea, QGridLayout,
+                               QMessageBox)
 from PySide6.QtCore import Qt, Signal
 from core.background_aggregator import BackgroundAggregatorThread
+from core.clean_confirmation import format_clean_confirmation
 from core.system_info import format_size, get_disk_usage, get_system_drive_path
 from core.db import db
 from ui.global_caches_tab import GlobalCacheDeleteThread
@@ -287,15 +289,34 @@ class DashboardTab(QWidget):
                 })
                 
         if not items: return
-        
+
+        # Confirm first: this button is the app's biggest CTA and the
+        # deletion is permanent (hard_delete bypasses the Recycle Bin).
+        # Every other destructive tab confirms; the Dashboard did not.
+        reply = QMessageBox.question(
+            self, "Confirm Permanent Deletion",
+            format_clean_confirmation(items),
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+        )
+        if reply != QMessageBox.Yes:
+            return
+
         self.btn_clean_rec.setEnabled(False)
         self.btn_clean_rec.setText("Cleaning...")
-        
+
         self.cleaner = GlobalCacheDeleteThread(items)
         self.cleaner.finished.connect(self.on_clean_finished)
         self.cleaner.start()
-        
-    def on_clean_finished(self, freed):
+
+    def on_clean_finished(self, freed, failed):
+        # Report the result like the other tabs do; previously the
+        # Dashboard silently rescanned, so a partial failure was invisible.
+        if failed:
+            QMessageBox.information(self, "Partially deleted",
+                f"Deleted {freed} cache folders. {failed} could not be fully deleted, and their space was not counted as freed.")
+        else:
+            QMessageBox.information(self, "Success",
+                f"Successfully deleted {freed} cache folders.")
         # Refresh dashboard
         self.btn_clean_rec.setText("Scanning...")
         self.aggregator = BackgroundAggregatorThread()
