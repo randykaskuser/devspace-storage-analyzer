@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QTableWidget, QTableWidgetItem, QHeaderView)
 from PySide6.QtCore import Qt, QThread, Signal
 from core.global_cache_cleaner import scan_global_caches
-from core.trash import hard_delete_directory_contents
+from core.trash import hard_delete_directory_contents, is_fully_deleted
 from core.system_info import format_size
 from core.db import db
 
@@ -16,21 +16,24 @@ class GlobalCacheScannerThread(QThread):
         self.finished.emit(caches)
 
 class GlobalCacheDeleteThread(QThread):
-    finished = Signal(int)
-    
+    finished = Signal(int, int)
+
     def __init__(self, items):
         super().__init__()
         self.items = items # List of dicts: {"name": "...", "path": "...", "size": 123}
-        
+
     def run(self):
         freed = 0
+        failed = 0
         for item in self.items:
             s, f = hard_delete_directory_contents(item["path"])
-            if s > 0 or f == 0:
+            if is_fully_deleted(s, f):
                 freed += 1
                 db.log_cleanup(f"Global Cache: {item['name']}", item["size"])
+            else:
+                failed += 1
         db.increment_session()
-        self.finished.emit(freed)
+        self.finished.emit(freed, failed)
 
 class GlobalCachesTab(QWidget):
     def __init__(self):
@@ -206,7 +209,10 @@ class GlobalCachesTab(QWidget):
             self.cleaner.finished.connect(self.on_clean_finished)
             self.cleaner.start()
             
-    def on_clean_finished(self, freed):
+    def on_clean_finished(self, freed, failed):
         self.progress.close()
-        QMessageBox.information(self, "Success", f"Successfully deleted {freed} cache folders.")
+        if failed:
+            QMessageBox.information(self, "Partially deleted", f"Deleted {freed} cache folders. {failed} could not be fully deleted, and their space was not counted as freed.")
+        else:
+            QMessageBox.information(self, "Success", f"Successfully deleted {freed} cache folders.")
         self.start_scan()
