@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QProgressDialog, QHeaderView)
 from PySide6.QtCore import Qt, QThread, Signal
 from core.windows_cleaner import scan_windows_storage, empty_recycle_bin
-from core.trash import hard_delete_directory_contents
+from core.trash import hard_delete_directory_contents, is_fully_deleted
 from core.system_info import format_size
 from core.db import db
 
@@ -16,27 +16,32 @@ class WindowsStorageScannerThread(QThread):
         self.finished.emit(results)
 
 class WindowsStorageDeleteThread(QThread):
-    finished = Signal(int)
-    
+    finished = Signal(int, int)
+
     def __init__(self, items):
         super().__init__()
         self.items = items
-        
+
     def run(self):
         freed = 0
+        failed = 0
         for item in self.items:
             if item["type"] == "recycle_bin":
                 if empty_recycle_bin():
                     freed += 1
                     db.log_cleanup("Recycle Bin", item["size"])
+                else:
+                    failed += 1
             else:
                 s, f = hard_delete_directory_contents(item["path"])
-                if s > 0 or f == 0:
+                if is_fully_deleted(s, f):
                     freed += 1
                     db.log_cleanup(f"Windows Storage: {item['name']}", item["size"])
-                    
+                else:
+                    failed += 1
+
         db.increment_session()
-        self.finished.emit(freed)
+        self.finished.emit(freed, failed)
 
 class WindowsStorageTab(QWidget):
     def __init__(self):
@@ -218,13 +223,16 @@ class WindowsStorageTab(QWidget):
             self.cleaner.finished.connect(self.on_clean_finished)
             self.cleaner.start()
             
-    def on_clean_finished(self, freed):
+    def on_clean_finished(self, freed, failed):
         self.progress.close()
         for item in self.tree_items_to_remove:
             parent = item.parent()
             parent.removeChild(item)
             if parent.childCount() == 0:
                 self.tree_results.takeTopLevelItem(self.tree_results.indexOfTopLevelItem(parent))
-                
-        QMessageBox.information(self, "Success", f"Successfully deleted {freed} Windows storage items.")
+
+        if failed:
+            QMessageBox.information(self, "Partially deleted", f"Deleted {freed} Windows storage items. {failed} could not be fully deleted, and their space was not counted as freed.")
+        else:
+            QMessageBox.information(self, "Success", f"Successfully deleted {freed} Windows storage items.")
         self.update_total()

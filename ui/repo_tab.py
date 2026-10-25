@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QFileDialog, QProgressDialog, QHeaderView)
 from PySide6.QtCore import Qt, QThread, Signal
 from core.repo_cleaner import scan_repos
-from core.trash import hard_delete_directory_contents
+from core.trash import hard_delete_directory_contents, is_fully_deleted
 from core.system_info import format_size
 from core.db import db
 
@@ -20,21 +20,24 @@ class RepoScannerThread(QThread):
         self.finished.emit(results)
 
 class RepoDeleteThread(QThread):
-    finished = Signal(int)
-    
+    finished = Signal(int, int)
+
     def __init__(self, items):
         super().__init__()
         self.items = items
-        
+
     def run(self):
         freed = 0
+        failed = 0
         for item in self.items:
             s, f = hard_delete_directory_contents(item["path"])
-            if s > 0 or f == 0:
+            if is_fully_deleted(s, f):
                 freed += 1
                 db.log_cleanup(f"Project Cache: {item['name']}", item["size"])
+            else:
+                failed += 1
         db.increment_session()
-        self.finished.emit(freed)
+        self.finished.emit(freed, failed)
 
 class RepoTab(QWidget):
     def __init__(self):
@@ -245,13 +248,16 @@ class RepoTab(QWidget):
             self.cleaner.finished.connect(self.on_clean_finished)
             self.cleaner.start()
             
-    def on_clean_finished(self, freed):
+    def on_clean_finished(self, freed, failed):
         self.progress.close()
         for item in self.tree_items_to_remove:
             parent = item.parent()
             parent.removeChild(item)
             if parent.childCount() == 0:
                 self.tree_results.takeTopLevelItem(self.tree_results.indexOfTopLevelItem(parent))
-                
-        QMessageBox.information(self, "Success", f"Successfully deleted {freed} cache folders.")
+
+        if failed:
+            QMessageBox.information(self, "Partially deleted", f"Deleted {freed} cache folders. {failed} could not be fully deleted, and their space was not counted as freed.")
+        else:
+            QMessageBox.information(self, "Success", f"Successfully deleted {freed} cache folders.")
         self.update_total()
