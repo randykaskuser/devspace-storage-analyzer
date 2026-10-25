@@ -131,6 +131,23 @@ def is_safe_deletion_target(path: str) -> bool:
 
     return True
 
+def is_fully_deleted(success_count: int, fail_count: int) -> bool:
+    """
+    Whether a hard_delete_directory_contents result counts as freed.
+
+    Only a result with zero failures counts. A partial deletion (some
+    children removed, some left behind) must never be logged as freed,
+    because the caller only knows the pre-scan size, not how many bytes
+    actually left the disk. Partial results are the caller's cue to
+    report the item as failed instead of freed.
+
+    An empty directory (0, 0) counts as freed: there is nothing left
+    in it, and its scanned size is zero anyway. A refused target
+    (0, 1) never counts.
+    """
+    return fail_count == 0
+
+
 def hard_delete_directory_contents(path: str) -> tuple[int, int]:
     """
     Permanently deletes all contents of a directory, bypassing the Recycle Bin.
