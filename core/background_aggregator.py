@@ -2,6 +2,7 @@ import json
 import subprocess
 import os
 from PySide6.QtCore import QThread, Signal
+from core.dashboard_totals import total_recoverable_bytes
 from core.global_cache_cleaner import scan_global_caches
 from core.repo_cleaner import get_dir_size
 from core.windows_cleaner import scan_windows_storage
@@ -21,8 +22,6 @@ class BackgroundAggregatorThread(QThread):
         # 1. Scan Global Caches
         caches = scan_global_caches()
         stats["global_caches"] = caches
-        for c in caches:
-            stats["total_recoverable"] += c.get("size_bytes", 0)
             
         # 2. Docker DF
         try:
@@ -58,7 +57,10 @@ class BackgroundAggregatorThread(QThread):
                             "size_bytes": size,
                             "path": vhdx_path
                         })
-                        stats["total_recoverable"] += size
+                        # Deliberately NOT added to total_recoverable:
+                        # a vhdx's full size is not reclaimable (see
+                        # core/dashboard_totals.py). The total is
+                        # computed once, below, from the counted lists.
         except Exception:
             pass
             
@@ -66,9 +68,9 @@ class BackgroundAggregatorThread(QThread):
         try:
             win_storage = scan_windows_storage()
             stats["windows_storage"] = win_storage
-            for w in win_storage:
-                stats["total_recoverable"] += w.get("size_bytes", 0)
         except Exception:
             pass
-            
+
+        stats["total_recoverable"] = total_recoverable_bytes(stats)
+
         self.finished.emit(stats)
