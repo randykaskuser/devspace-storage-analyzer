@@ -186,14 +186,11 @@ class DashboardTab(QWidget):
             else:
                 other_size += size
                 
-        # Parse Docker
-        docker_active_size = 0
-        for d in stats.get("docker_df", []):
-            try:
-                # Docker sizes can be tricky without proper parsing, just adding mock size to breakdown if active
-                if "Images" in d.get("Type", ""): docker_size += 500000000
-            except: pass
-            
+        # docker_df entries carry unparsed size strings (e.g. "5.2GB"),
+        # not byte counts, so nothing is added here. docker_size stays
+        # the real WSL vhdx total from wsl_distros above; the old code
+        # added a mock 500,000,000 bytes per Images row.
+
         # Update Stat Cards
         # Clear old cards
         while self.grid_layout.count():
