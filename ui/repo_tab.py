@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QLabel, QTreeWidget, QTreeWidgetItem, QMessageBox, 
                                QFileDialog, QProgressDialog, QHeaderView)
 from PySide6.QtCore import Qt, QThread, Signal
-from core.repo_cleaner import scan_repos
+from core.repo_cleaner import is_broad_scan_root, scan_repos
 from core.trash import hard_delete_directory_contents, is_fully_deleted
 from core.system_info import format_size
 from core.db import db
@@ -102,6 +102,17 @@ class RepoTab(QWidget):
     def add_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "Select Development Root Folder")
         if folder and folder not in self.target_dirs:
+            if is_broad_scan_root(folder):
+                reply = QMessageBox.question(
+                    self, "Scan a very broad folder?",
+                    f"Scanning {folder} will walk your whole drive or home folder. "
+                    "That can take a long time and may list build folders that are "
+                    "not part of any project. Pick a development folder instead, "
+                    "or continue anyway?",
+                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+                )
+                if reply != QMessageBox.Yes:
+                    return
             self.target_dirs.append(folder)
             self.lbl_dirs.setText(f"Folders to scan: {', '.join(self.target_dirs)}")
             
