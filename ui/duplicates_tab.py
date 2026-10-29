@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QTableWidget, QTableWidgetItem, QHeaderView)
 from PySide6.QtCore import Qt, QThread, Signal
 from core.duplicate_finder import find_duplicates, trash_duplicates
+from core.repo_cleaner import is_broad_scan_root
 from core.system_info import format_size
 
 
@@ -119,6 +120,16 @@ class DuplicatesTab(QWidget):
         if not os.path.isabs(chosen) or not os.path.isdir(chosen):
             QMessageBox.warning(self, "Invalid Folder", "Please choose an existing folder.")
             return
+        if is_broad_scan_root(chosen):
+            reply = QMessageBox.question(
+                self, "Scan a very broad folder?",
+                f"Scanning {chosen} will walk your whole drive or home folder. "
+                "That can take a very long time and will hash every file it finds. "
+                "Pick a smaller folder instead, or continue anyway?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            )
+            if reply != QMessageBox.Yes:
+                return
         self.root = chosen
         self.lbl_root.setText(f"Folder: {self.root}")
         self.lbl_root.setStyleSheet("color: #a9b7c6; padding: 10px 0;")
