@@ -3,7 +3,8 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QLabel, QTreeWidget, QTreeWidgetItem, QMessageBox, 
                                QFileDialog, QProgressDialog, QHeaderView)
 from PySide6.QtCore import Qt, QThread, Signal
-from core.repo_cleaner import is_broad_scan_root, scan_repos
+from core.paths import is_broad_scan_root
+from core.repo_cleaner import scan_repos
 from core.trash import hard_delete_directory_contents, is_fully_deleted
 from core.system_info import format_size
 from core.db import db

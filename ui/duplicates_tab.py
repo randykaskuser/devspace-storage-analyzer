@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QTableWidget, QTableWidgetItem, QHeaderView)
 from PySide6.QtCore import Qt, QThread, Signal
 from core.duplicate_finder import find_duplicates, trash_duplicates
-from core.repo_cleaner import is_broad_scan_root
+from core.paths import is_broad_scan_root
 from core.system_info import format_size
 
 

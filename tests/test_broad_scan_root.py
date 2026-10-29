@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from core.repo_cleaner import is_broad_scan_root
+from core.paths import is_broad_scan_root
 
 
 def test_filesystem_root_is_broad():
