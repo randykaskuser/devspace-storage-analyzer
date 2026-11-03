@@ -151,6 +151,13 @@ class WindowsStorageTab(QWidget):
         self.tree_results.expandAll()
         self.tree_results.blockSignals(False)
         self.update_total()
+        if not results:
+            # Empty result, not a failed scan: say so. update_total()
+            # above has already set the label to "0 B" and disabled
+            # the Clean button; this line only replaces the label text.
+            self.lbl_total.setText(
+                "No items found. Windows Storage has nothing to clean right now."
+            )
         
     def update_total(self, item=None, column=0):
         # Auto-check children if parent is checked
