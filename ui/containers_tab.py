@@ -102,8 +102,9 @@ class ContainersTab(QWidget):
         
         # Check Docker VHDX
         vhdx_path = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Docker", "wsl", "data", "ext4.vhdx")
+        vhdx_exists = os.path.exists(vhdx_path)
         size_str = "Not Found"
-        if os.path.exists(vhdx_path):
+        if vhdx_exists:
             size = os.path.getsize(vhdx_path)
             size_str = format_size(size)
             
@@ -114,7 +115,14 @@ class ContainersTab(QWidget):
         self.btn_compact.setStyleSheet("background-color: #2b7042; font-size: 14px; padding: 10px;")
         self.btn_compact.clicked.connect(self.compact_disk)
         
-        if not is_admin():
+        if not vhdx_exists:
+            # No Docker data file, so compaction cannot succeed: do not
+            # offer a button that only reaches a confirm dialog and an
+            # error. Restarting as admin would not help here, so the
+            # missing-file reason takes precedence over the admin reason.
+            self.btn_compact.setEnabled(False)
+            self.btn_compact.setText("Compact Docker Disk (Docker data file not found)")
+        elif not is_admin():
             self.btn_compact.setEnabled(False)
             self.btn_compact.setText("Compact Docker Disk (Restart App as Admin to unlock)")
             
