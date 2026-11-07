@@ -43,8 +43,10 @@ class RepoDeleteThread(QThread):
 class RepoTab(QWidget):
     def __init__(self):
         super().__init__()
-        # Load saved directories if any (simple implementation)
-        self.target_dirs = []
+        # Workspace folders persist in ~/.devspace/settings.json via
+        # core.db, so the tab opens with yesterday's folders instead
+        # of "None" on every launch.
+        self.target_dirs = db.get_workspace_dirs()
         self.init_ui()
         
     def init_ui(self):
@@ -57,20 +59,26 @@ class RepoTab(QWidget):
         
         btn_add = QPushButton("Add Folder")
         btn_add.clicked.connect(self.add_folder)
-        
+
+        btn_clear = QPushButton("Clear Folders")
+        btn_clear.clicked.connect(self.clear_folders)
+        self.btn_clear = btn_clear
+
         btn_scan = QPushButton("Scan Workspaces")
         btn_scan.setStyleSheet("background-color: #2b7042;")
         btn_scan.clicked.connect(self.start_scan)
         self.btn_scan = btn_scan
-        
+
         header_layout.addWidget(lbl_desc)
         header_layout.addStretch()
         header_layout.addWidget(btn_add)
+        header_layout.addWidget(btn_clear)
         header_layout.addWidget(self.btn_scan)
         
         # Directories display
         self.lbl_dirs = QLabel("Folders to scan: None")
         self.lbl_dirs.setStyleSheet("font-weight: bold; color: #4a88c7; margin-bottom: 10px;")
+        self._update_dirs_label()
         
         # Tree Widget for Projects
         self.tree_results = QTreeWidget()
@@ -115,7 +123,22 @@ class RepoTab(QWidget):
                 if reply != QMessageBox.Yes:
                     return
             self.target_dirs.append(folder)
+            db.set_workspace_dirs(self.target_dirs)
+            self._update_dirs_label()
+
+    def _update_dirs_label(self):
+        if self.target_dirs:
             self.lbl_dirs.setText(f"Folders to scan: {', '.join(self.target_dirs)}")
+        else:
+            self.lbl_dirs.setText("Folders to scan: None")
+
+    def clear_folders(self):
+        """Forget the saved workspace folders (no files are deleted)."""
+        if not self.target_dirs:
+            return
+        self.target_dirs = []
+        db.set_workspace_dirs(self.target_dirs)
+        self._update_dirs_label()
             
     def start_scan(self):
         if not self.target_dirs:

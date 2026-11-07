@@ -12,6 +12,7 @@ class DevSpaceDB:
         self.profile_dir = os.path.join(get_home_dir(), ".devspace")
         self.stats_file = os.path.join(self.profile_dir, "stats.json")
         self.history_file = os.path.join(self.profile_dir, "history.json")
+        self.settings_file = os.path.join(self.profile_dir, "settings.json")
         self._ensure_dirs()
         self._ensure_files()
         
@@ -30,6 +31,9 @@ class DevSpaceDB:
             
         if not os.path.exists(self.history_file):
             self._write_json(self.history_file, [])
+
+        if not os.path.exists(self.settings_file):
+            self._write_json(self.settings_file, {})
             
     def _read_json(self, filepath):
         try:
@@ -86,6 +90,32 @@ class DevSpaceDB:
         stats = self.get_stats()
         stats["cleanup_sessions"] = stats.get("cleanup_sessions", 0) + 1
         self._write_json(self.stats_file, stats)
+
+    def get_workspace_dirs(self):
+        """Workspace folders saved from the Workspaces tab.
+
+        Loaded verbatim: entries are kept even if the folder is missing
+        right now (a drive may be temporarily unmounted), and only
+        string entries survive, so a hand-edited or corrupt file can
+        never hand the scanner a non-path. A missing or corrupt
+        settings file reads as no saved folders — the same empty
+        state the tab had before this feature existed.
+        """
+        data = self._read_json(self.settings_file)
+        if not isinstance(data, dict):
+            return []
+        dirs = data.get("workspace_dirs", [])
+        if not isinstance(dirs, list):
+            return []
+        return [d for d in dirs if isinstance(d, str)]
+
+    def set_workspace_dirs(self, dirs):
+        """Persist the Workspaces tab's folder list."""
+        data = self._read_json(self.settings_file)
+        if not isinstance(data, dict):
+            data = {}
+        data["workspace_dirs"] = list(dirs)
+        self._write_json(self.settings_file, data)
 
 # Global singleton
 db = DevSpaceDB()
