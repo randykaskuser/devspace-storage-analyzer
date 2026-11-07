@@ -54,3 +54,46 @@ def test_stats_roundtrip_in_isolated_home(monkeypatch, tmp_path):
     history = db.get_history()
     assert history and history[0]["item"] == "npm cache"
     assert history[0]["bytes_freed"] == 1024
+
+
+def test_workspace_dirs_empty_by_default(monkeypatch, tmp_path):
+    """A fresh profile has no saved workspace folders."""
+    monkeypatch.setattr(core.db, "get_home_dir", lambda: str(tmp_path))
+    db = DevSpaceDB()
+    assert db.get_workspace_dirs() == []
+
+
+def test_settings_file_created_under_home(monkeypatch, tmp_path):
+    """settings.json is created inside the resolved profile dir."""
+    monkeypatch.setattr(core.db, "get_home_dir", lambda: str(tmp_path))
+    db = DevSpaceDB()
+    assert os.path.isfile(db.settings_file)
+    assert db.settings_file == str(tmp_path / ".devspace" / "settings.json")
+
+
+def test_workspace_dirs_roundtrip_in_isolated_home(monkeypatch, tmp_path):
+    """Saved folders survive a fresh DevSpaceDB in the same home."""
+    monkeypatch.setattr(core.db, "get_home_dir", lambda: str(tmp_path))
+    db = DevSpaceDB()
+    db.set_workspace_dirs([r"D:\Development", r"E:\Repos"])
+    db2 = DevSpaceDB()
+    assert db2.get_workspace_dirs() == [r"D:\Development", r"E:\Repos"]
+
+
+def test_workspace_dirs_corrupt_file_returns_empty(monkeypatch, tmp_path):
+    """A corrupt settings.json reads as no saved folders, and saving still works."""
+    monkeypatch.setattr(core.db, "get_home_dir", lambda: str(tmp_path))
+    db = DevSpaceDB()
+    with open(db.settings_file, "w", encoding="utf-8") as f:
+        f.write("{not json")
+    assert db.get_workspace_dirs() == []
+    db.set_workspace_dirs([r"D:\Development"])
+    assert db.get_workspace_dirs() == [r"D:\Development"]
+
+
+def test_workspace_dirs_drops_non_strings(monkeypatch, tmp_path):
+    """Only string entries survive a hand-edited settings file."""
+    monkeypatch.setattr(core.db, "get_home_dir", lambda: str(tmp_path))
+    db = DevSpaceDB()
+    db._write_json(db.settings_file, {"workspace_dirs": [r"D:\Development", 42, None, True]})
+    assert db.get_workspace_dirs() == [r"D:\Development"]
