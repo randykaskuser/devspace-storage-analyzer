@@ -71,7 +71,14 @@ class ContainersTab(QWidget):
     def __init__(self):
         super().__init__()
         self.init_ui()
-        
+        self.start_scan()
+
+    def start_scan(self):
+        self.btn_refresh.setEnabled(False)
+        self.btn_refresh.setText("Refreshing...")
+        self.lbl_loading.setText("Scanning Docker Engine and WSL...")
+        self.lbl_loading.show()
+
         self.scanner = DockerScanThread()
         self.scanner.finished.connect(self.on_scan_finished)
         self.scanner.start()
@@ -100,35 +107,22 @@ class ContainersTab(QWidget):
         )
         lbl_desc.setStyleSheet("color: #a9b7c6;")
         
-        # Check Docker VHDX
-        vhdx_path = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Docker", "wsl", "data", "ext4.vhdx")
-        vhdx_exists = os.path.exists(vhdx_path)
-        size_str = "Not Found"
-        if vhdx_exists:
-            size = os.path.getsize(vhdx_path)
-            size_str = format_size(size)
-            
-        self.lbl_status = QLabel(f"Host ext4.vhdx size: {size_str}")
+        self.lbl_status = QLabel("Host ext4.vhdx size: Not Found")
         self.lbl_status.setStyleSheet("font-size: 16px; font-weight: bold; color: #4a88c7; margin-top: 10px; margin-bottom: 10px;")
-        
+
         self.btn_compact = QPushButton("Compact Docker Disk (Requires Admin)")
         self.btn_compact.setStyleSheet("background-color: #2b7042; font-size: 14px; padding: 10px;")
         self.btn_compact.clicked.connect(self.compact_disk)
-        
-        if not vhdx_exists:
-            # No Docker data file, so compaction cannot succeed: do not
-            # offer a button that only reaches a confirm dialog and an
-            # error. Restarting as admin would not help here, so the
-            # missing-file reason takes precedence over the admin reason.
-            self.btn_compact.setEnabled(False)
-            self.btn_compact.setText("Compact Docker Disk (Docker data file not found)")
-        elif not is_admin():
-            self.btn_compact.setEnabled(False)
-            self.btn_compact.setText("Compact Docker Disk (Restart App as Admin to unlock)")
-            
+
+        self._update_vhdx_status()
+
+        self.btn_refresh = QPushButton("Refresh Docker Status")
+        self.btn_refresh.clicked.connect(self.start_scan)
+
         action_layout.addWidget(lbl_desc)
         action_layout.addWidget(self.lbl_status)
         action_layout.addWidget(self.btn_compact)
+        action_layout.addWidget(self.btn_refresh)
         
         layout.addWidget(lbl_title)
         layout.addWidget(self.lbl_loading)
@@ -140,6 +134,43 @@ class ContainersTab(QWidget):
         
         self.setLayout(layout)
         
+    def _update_vhdx_status(self):
+        """Recompute the vhdx status label and Compact button state.
+
+        Called at tab construction and after every scan, so a Refresh
+        also picks up a Docker install (or removal) mid-session. Branch
+        order matches the original init_ui block: a missing file takes
+        precedence over the admin reason, because restarting as admin
+        cannot create the file. The else branch matters only on
+        refresh: it re-enables the button when the file has appeared
+        since the tab was built.
+        """
+        vhdx_path = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Docker", "wsl", "data", "ext4.vhdx")
+        vhdx_exists = os.path.exists(vhdx_path)
+        size_str = "Not Found"
+        if vhdx_exists:
+            size_str = format_size(os.path.getsize(vhdx_path))
+        self.lbl_status.setText(f"Host ext4.vhdx size: {size_str}")
+        if not vhdx_exists:
+            # No Docker data file, so compaction cannot succeed: do not
+            # offer a button that only reaches a confirm dialog and an
+            # error.
+            self.btn_compact.setEnabled(False)
+            self.btn_compact.setText("Compact Docker Disk (Docker data file not found)")
+        elif not is_admin():
+            self.btn_compact.setEnabled(False)
+            self.btn_compact.setText("Compact Docker Disk (Restart App as Admin to unlock)")
+        else:
+            self.btn_compact.setEnabled(True)
+            self.btn_compact.setText("Compact Docker Disk (Requires Admin)")
+
+    @staticmethod
+    def _clear_layout(layout):
+        while layout.count():
+            item = layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
     def create_stat_card(self, title, value):
         card = QFrame()
         card.setStyleSheet("background-color: #313335; border-radius: 8px; border: 1px solid #444444;")
@@ -159,7 +190,16 @@ class ContainersTab(QWidget):
 
     def on_scan_finished(self, stats):
         self.lbl_loading.hide()
-        
+        self.btn_refresh.setEnabled(True)
+        self.btn_refresh.setText("Refresh Docker Status")
+        self._update_vhdx_status()
+
+        # Clear the previous scan's cards before repopulating: without
+        # this, a refresh would append a second set of stat cards below
+        # the first, plus a second "WSL Distributions" title.
+        self._clear_layout(self.docker_stats)
+        self._clear_layout(self.wsl_stats)
+
         # Populate Docker Stats
         if stats.get("docker_df"):
             for d in stats["docker_df"]:
