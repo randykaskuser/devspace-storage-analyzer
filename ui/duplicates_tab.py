@@ -76,6 +76,7 @@ class DuplicatesTab(QWidget):
         # Selection tools
         selection_layout = QHBoxLayout()
         btn_select_all = QPushButton("Select All")
+        btn_select_all.setToolTip("Check every copy except the first one in each group")
         btn_select_all.clicked.connect(self.select_all)
         btn_deselect_all = QPushButton("Deselect All")
         btn_deselect_all.clicked.connect(self.deselect_all)
@@ -227,7 +228,16 @@ class DuplicatesTab(QWidget):
         self.btn_clean.setEnabled(checked > 0)
 
     def select_all(self):
+        """Check every copy except the first one in each group (the kept copy).
+
+        Mirrors auto_select: the tab promises one copy of each group is
+        kept, so the bulk-select control must never check it. A row whose
+        stored data is missing is left unchecked (the safe direction).
+        """
         for i in range(self.table.rowCount()):
+            data = self.table.item(i, 3).data(Qt.UserRole)
+            if data is not None and data["is_first"]:
+                continue
             self.table.item(i, 0).setCheckState(Qt.Checked)
 
     def deselect_all(self):
