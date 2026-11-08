@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QLabel, QMessageBox, QProgressDialog, QFileDialog,
                                QTableWidget, QTableWidgetItem, QHeaderView)
 from PySide6.QtCore import Qt, QThread, Signal
+from core.db import db
 from core.duplicate_finder import find_duplicates, trash_duplicates
 from core.paths import is_broad_scan_root
 from core.system_info import format_size
@@ -42,7 +43,10 @@ class DuplicatesTab(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.root = ""
+        # The last scanned folder persists in ~/.devspace/settings.json
+        # via core.db, so the tab opens with yesterday's folder instead
+        # of "No folder selected" on every launch.
+        self.root = db.get_duplicates_root()
         self.last_scan_groups = 0
         self.last_scan_errors = 0
         self.init_ui()
@@ -58,6 +62,7 @@ class DuplicatesTab(QWidget):
 
         self.lbl_root = QLabel("No folder selected")
         self.lbl_root.setStyleSheet("color: #7a8899; padding: 10px 0;")
+        self._update_root_label()
 
         btn_folder = QPushButton("Choose Folder...")
         btn_folder.clicked.connect(self.choose_folder)
@@ -132,8 +137,25 @@ class DuplicatesTab(QWidget):
             if reply != QMessageBox.Yes:
                 return
         self.root = chosen
-        self.lbl_root.setText(f"Folder: {self.root}")
-        self.lbl_root.setStyleSheet("color: #a9b7c6; padding: 10px 0;")
+        db.set_duplicates_root(chosen)
+        self._update_root_label()
+        # Results belong to the folder that was scanned: choosing a new
+        # folder clears the previous folder's rows, so the table can
+        # never show one folder's duplicates under another folder's
+        # label with "Move Selected to Trash" still enabled.
+        self.table.setRowCount(0)
+        self.last_scan_groups = 0
+        self.last_scan_errors = 0
+        self.btn_clean.setEnabled(False)
+        self.lbl_total.setText("Choose a folder and scan to find duplicate files.")
+
+    def _update_root_label(self):
+        if self.root:
+            self.lbl_root.setText(f"Folder: {self.root}")
+            self.lbl_root.setStyleSheet("color: #a9b7c6; padding: 10px 0;")
+        else:
+            self.lbl_root.setText("No folder selected")
+            self.lbl_root.setStyleSheet("color: #7a8899; padding: 10px 0;")
 
     def start_scan(self):
         if not self.root:
