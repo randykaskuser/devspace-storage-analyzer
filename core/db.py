@@ -117,5 +117,32 @@ class DevSpaceDB:
         data["workspace_dirs"] = list(dirs)
         self._write_json(self.settings_file, data)
 
+    def get_duplicates_root(self):
+        """Last folder scanned from the Duplicates tab.
+
+        Loaded verbatim and kept even if the folder is missing right
+        now (a drive may be temporarily unmounted); only a string
+        survives, so a hand-edited or corrupt file can never hand the
+        scanner a non-path. A missing or corrupt settings file reads
+        as no saved folder — the same empty state the tab had before
+        this feature existed. A missing folder is refused gracefully
+        by core.duplicate_finder (recorded in ``errors``, scan
+        continues), so a stale saved root degrades to an empty
+        result, never a crash.
+        """
+        data = self._read_json(self.settings_file)
+        if not isinstance(data, dict):
+            return ""
+        root = data.get("duplicates_root", "")
+        return root if isinstance(root, str) else ""
+
+    def set_duplicates_root(self, root):
+        """Persist the Duplicates tab's scanned folder."""
+        data = self._read_json(self.settings_file)
+        if not isinstance(data, dict):
+            data = {}
+        data["duplicates_root"] = root
+        self._write_json(self.settings_file, data)
+
 # Global singleton
 db = DevSpaceDB()

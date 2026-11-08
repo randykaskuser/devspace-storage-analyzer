@@ -97,3 +97,41 @@ def test_workspace_dirs_drops_non_strings(monkeypatch, tmp_path):
     db = DevSpaceDB()
     db._write_json(db.settings_file, {"workspace_dirs": [r"D:\Development", 42, None, True]})
     assert db.get_workspace_dirs() == [r"D:\Development"]
+
+
+def test_duplicates_root_empty_by_default(monkeypatch, tmp_path):
+    """A fresh profile has no saved Duplicates folder."""
+    monkeypatch.setattr(core.db, "get_home_dir", lambda: str(tmp_path))
+    db = DevSpaceDB()
+    assert db.get_duplicates_root() == ""
+
+
+def test_duplicates_root_roundtrip_in_isolated_home(monkeypatch, tmp_path):
+    """A saved Duplicates folder survives a fresh DevSpaceDB in the same home,
+    and saving it does not clobber the saved workspace folders."""
+    monkeypatch.setattr(core.db, "get_home_dir", lambda: str(tmp_path))
+    db = DevSpaceDB()
+    db.set_workspace_dirs([r"D:\Development"])
+    db.set_duplicates_root(r"D:\Downloads")
+    db2 = DevSpaceDB()
+    assert db2.get_duplicates_root() == r"D:\Downloads"
+    assert db2.get_workspace_dirs() == [r"D:\Development"]
+
+
+def test_duplicates_root_corrupt_file_returns_empty(monkeypatch, tmp_path):
+    """A corrupt settings.json reads as no saved Duplicates folder, and saving still works."""
+    monkeypatch.setattr(core.db, "get_home_dir", lambda: str(tmp_path))
+    db = DevSpaceDB()
+    with open(db.settings_file, "w", encoding="utf-8") as f:
+        f.write("{not json")
+    assert db.get_duplicates_root() == ""
+    db.set_duplicates_root(r"D:\Downloads")
+    assert db.get_duplicates_root() == r"D:\Downloads"
+
+
+def test_duplicates_root_drops_non_string(monkeypatch, tmp_path):
+    """Only a string survives a hand-edited settings file."""
+    monkeypatch.setattr(core.db, "get_home_dir", lambda: str(tmp_path))
+    db = DevSpaceDB()
+    db._write_json(db.settings_file, {"duplicates_root": 42})
+    assert db.get_duplicates_root() == ""
